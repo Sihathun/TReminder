@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TReminder - Self-Hosted Reminder System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⏰ TReminder</h1>
+      <p>Self-hosted reminder system with Discord & Email notifications</p>
+    </header>
+
+    <main>
+      <!-- Create Reminder Form -->
+      <section class="card">
+        <h2>Create New Reminder</h2>
+        <form id="reminderForm">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" placeholder="Reminder title..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="What do you want to be reminded about?" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Remind At</label>
+            <div class="datetime-picker">
+              <div class="date-input">
+                <input type="date" id="remind_date" name="remind_date" required>
+              </div>
+              <div class="time-picker">
+                <select id="remind_hour" name="remind_hour" required>
+                  <option value="">HH</option>
+                </select>
+                <span class="time-separator">:</span>
+                <select id="remind_minute" name="remind_minute" required>
+                  <option value="">MM</option>
+                </select>
+                <select id="remind_ampm" name="remind_ampm" required>
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="notify_type">Notification Type</label>
+            <select id="notify_type" name="notify_type" required>
+              <option value="">Select type...</option>
+              <option value="discord">Discord Webhook</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="targetGroup">
+            <label for="notify_target" id="targetLabel">Target</label>
+            <input type="text" id="notify_target" name="notify_target" placeholder="Enter target..." required>
+            <small id="targetHint" class="hint"></small>
+          </div>
+
+          <!-- Recurrence Options -->
+          <div class="form-group">
+            <label>Repeat</label>
+            <div class="recurrence-options">
+              <label class="radio-option">
+                <input type="radio" name="recurrence" value="none" checked>
+                <span class="radio-label">One-time</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="recurrence" value="daily">
+                <span class="radio-label">Daily</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="recurrence" value="weekly">
+                <span class="radio-label">Weekly</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="recurrence" value="monthly">
+                <span class="radio-label">Monthly</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" id="recurrenceEndGroup" style="display: none;">
+            <label for="recurrence_end">Repeat Until</label>
+            <input type="date" id="recurrence_end" name="recurrence_end">
+            <small class="hint">Leave empty for indefinite recurrence</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <span>Create Reminder</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Reminders List -->
+      <section class="card">
+        <div class="section-header">
+          <h2>Your Reminders</h2>
+          <button id="refreshBtn" class="btn btn-secondary">↻ Refresh</button>
+        </div>
+        
+        <div id="remindersList" class="reminders-list">
+          <p class="loading">Loading reminders...</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>TReminder &copy; 2024 - Self-hosted reminder system</p>
+    </footer>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h2>Edit Reminder</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <form id="editForm">
+        <input type="hidden" id="edit_id">
+        <div class="form-group">
+          <label for="edit_title">Title</label>
+          <input type="text" id="edit_title" name="title" required>
+        </div>
+        <div class="form-group">
+          <label for="edit_message">Message</label>
+          <textarea id="edit_message" name="message" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Remind At</label>
+          <div class="datetime-picker">
+            <div class="date-input">
+              <input type="date" id="edit_remind_date" name="remind_date" required>
+            </div>
+            <div class="time-picker">
+              <select id="edit_remind_hour" name="remind_hour" required>
+                <option value="">HH</option>
+              </select>
+              <span class="time-separator">:</span>
+              <select id="edit_remind_minute" name="remind_minute" required>
+                <option value="">MM</option>
+              </select>
+              <select id="edit_remind_ampm" name="remind_ampm" required>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit_notify_type">Notification Type</label>
+          <select id="edit_notify_type" name="notify_type" required>
+            <option value="discord">Discord Webhook</option>
+            <option value="email">Email</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit_notify_target">Target</label>
+          <input type="text" id="edit_notify_target" name="notify_target" required>
+        </div>
+        <!-- Recurrence Options -->
+        <div class="form-group">
+          <label>Repeat</label>
+          <div class="recurrence-options">
+            <label class="radio-option">
+              <input type="radio" name="edit_recurrence" value="none" checked>
+              <span class="radio-label">One-time</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="edit_recurrence" value="daily">
+              <span class="radio-label">Daily</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="edit_recurrence" value="weekly">
+              <span class="radio-label">Weekly</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="edit_recurrence" value="monthly">
+              <span class="radio-label">Monthly</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group" id="editRecurrenceEndGroup" style="display: none;">
+          <label for="edit_recurrence_end">Repeat Until</label>
+          <input type="date" id="edit_recurrence_end" name="recurrence_end">
+          <small class="hint">Leave empty for indefinite recurrence</small>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

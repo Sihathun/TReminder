@@ -32,7 +32,7 @@ router.get("/:id", (req, res) => {
 
 // Create a new reminder
 router.post("/", (req, res) => {
-  const { title, message, notify_type, notify_target, remind_at } = req.body;
+  const { title, message, notify_type, notify_target, remind_at, recurrence, recurrence_end } = req.body;
 
   // Validation
   if (!title || !message || !notify_type || !notify_target || !remind_at) {
@@ -43,10 +43,13 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "notify_type must be 'email' or 'discord'" });
   }
 
+  const validRecurrence = ['none', 'daily', 'weekly', 'monthly'];
+  const recurrenceValue = recurrence && validRecurrence.includes(recurrence) ? recurrence : 'none';
+
   db.run(
-    `INSERT INTO reminders (title, message, notify_type, notify_target, remind_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [title, message, notify_type, notify_target, remind_at],
+    `INSERT INTO reminders (title, message, notify_type, notify_target, remind_at, recurrence, recurrence_end)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [title, message, notify_type, notify_target, remind_at, recurrenceValue, recurrence_end || null],
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -59,13 +62,16 @@ router.post("/", (req, res) => {
 // Update a reminder
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { title, message, notify_type, notify_target, remind_at } = req.body;
+  const { title, message, notify_type, notify_target, remind_at, recurrence, recurrence_end } = req.body;
+
+  const validRecurrence = ['none', 'daily', 'weekly', 'monthly'];
+  const recurrenceValue = recurrence && validRecurrence.includes(recurrence) ? recurrence : 'none';
 
   db.run(
     `UPDATE reminders 
-     SET title = ?, message = ?, notify_type = ?, notify_target = ?, remind_at = ?, sent = 0
+     SET title = ?, message = ?, notify_type = ?, notify_target = ?, remind_at = ?, sent = 0, recurrence = ?, recurrence_end = ?
      WHERE id = ?`,
-    [title, message, notify_type, notify_target, remind_at, id],
+    [title, message, notify_type, notify_target, remind_at, recurrenceValue, recurrence_end || null, id],
     function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });

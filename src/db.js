@@ -29,9 +29,4 @@ db.run(`
   )
 `);
 
-// Add new columns if they don't exist (for existing databases)
-db.run(`ALTER TABLE reminders ADD COLUMN recurrence TEXT DEFAULT 'none'`, () => {});
-db.run(`ALTER TABLE reminders ADD COLUMN recurrence_end DATETIME`, () => {});
-db.run(`ALTER TABLE reminders ADD COLUMN parent_id INTEGER`, () => {});
-
 module.exports = db;

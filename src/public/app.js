@@ -11,6 +11,8 @@ const targetLabel = document.getElementById('targetLabel');
 const targetHint = document.getElementById('targetHint');
 const editModal = document.getElementById('editModal');
 const editForm = document.getElementById('editForm');
+const recurrenceEndGroup = document.getElementById('recurrenceEndGroup');
+const editRecurrenceEndGroup = document.getElementById('editRecurrenceEndGroup');
 
 // Toast container
 const toastContainer = document.createElement('div');
@@ -20,7 +22,8 @@ document.body.appendChild(toastContainer);
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadReminders();
-  setMinDateTime();
+  initializeTimePickers();
+  setMinDate();
   setupEventListeners();
 });
 
@@ -30,6 +33,19 @@ function setupEventListeners() {
   notifyTypeSelect.addEventListener('change', updateTargetField);
   editForm.addEventListener('submit', handleEditReminder);
   
+  // Recurrence toggle
+  document.querySelectorAll('input[name="recurrence"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      recurrenceEndGroup.style.display = e.target.value !== 'none' ? 'block' : 'none';
+    });
+  });
+  
+  document.querySelectorAll('input[name="edit_recurrence"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      editRecurrenceEndGroup.style.display = e.target.value !== 'none' ? 'block' : 'none';
+    });
+  });
+  
   // Close modal on outside click
   editModal.addEventListener('click', (e) => {
     if (e.target === editModal) {
@@ -38,11 +54,91 @@ function setupEventListeners() {
   });
 }
 
-function setMinDateTime() {
+function initializeTimePickers() {
+  // Populate hour selects (1-12)
+  const hourSelects = [document.getElementById('remind_hour'), document.getElementById('edit_remind_hour')];
+  hourSelects.forEach(select => {
+    if (!select) return;
+    select.innerHTML = '<option value="">HH</option>';
+    for (let i = 1; i <= 12; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = i.toString().padStart(2, '0');
+      select.appendChild(option);
+    }
+  });
+  
+  // Populate minute selects (00-55 in 5-minute intervals)
+  const minuteSelects = [document.getElementById('remind_minute'), document.getElementById('edit_remind_minute')];
+  minuteSelects.forEach(select => {
+    if (!select) return;
+    select.innerHTML = '<option value="">MM</option>';
+    for (let i = 0; i < 60; i += 5) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = i.toString().padStart(2, '0');
+      select.appendChild(option);
+    }
+  });
+}
+
+function setMinDate() {
+  const today = new Date().toISOString().split('T')[0];
+  const dateInputs = ['remind_date', 'recurrence_end', 'edit_remind_date', 'edit_recurrence_end'];
+  dateInputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.min = today;
+  });
+  
+  // Set default date to today
+  document.getElementById('remind_date').value = today;
+  
+  // Set default time to next hour
   const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const localISOTime = new Date(now.getTime() - offset * 60000).toISOString().slice(0, 16);
-  document.getElementById('remind_at').min = localISOTime;
+  let hour = now.getHours() + 1;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour > 12 ? hour - 12 : hour;
+  if (hour === 0) hour = 12;
+  
+  document.getElementById('remind_hour').value = hour;
+  document.getElementById('remind_minute').value = 0;
+  document.getElementById('remind_ampm').value = ampm;
+}
+
+function getDateTimeFromPickers(prefix = '') {
+  const date = document.getElementById(prefix + 'remind_date').value;
+  let hour = parseInt(document.getElementById(prefix + 'remind_hour').value);
+  const minute = parseInt(document.getElementById(prefix + 'remind_minute').value);
+  const ampm = document.getElementById(prefix + 'remind_ampm').value;
+  
+  // Convert to 24-hour format
+  if (ampm === 'PM' && hour !== 12) {
+    hour += 12;
+  } else if (ampm === 'AM' && hour === 12) {
+    hour = 0;
+  }
+  
+  const dateTime = new Date(`${date}T${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`);
+  return dateTime.toISOString();
+}
+
+function setDateTimeToPickers(isoString, prefix = '') {
+  const date = new Date(isoString);
+  
+  // Set date
+  const dateStr = date.toISOString().split('T')[0];
+  document.getElementById(prefix + 'remind_date').value = dateStr;
+  
+  // Set time
+  let hour = date.getHours();
+  const minute = Math.floor(date.getMinutes() / 5) * 5; // Round to nearest 5
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour > 12 ? hour - 12 : hour;
+  if (hour === 0) hour = 12;
+  
+  document.getElementById(prefix + 'remind_hour').value = hour;
+  document.getElementById(prefix + 'remind_minute').value = minute;
+  document.getElementById(prefix + 'remind_ampm').value = ampm;
 }
 
 function updateTargetField() {
@@ -115,12 +211,35 @@ function createReminderHTML(reminder) {
     ? '<span class="badge badge-discord">Discord</span>'
     : '<span class="badge badge-email">Email</span>';
   
+  // Recurrence badge
+  let recurrenceBadge = '';
+  if (reminder.recurrence && reminder.recurrence !== 'none') {
+    const recurrenceLabels = {
+      daily: '🔄 Daily',
+      weekly: '🔄 Weekly',
+      monthly: '🔄 Monthly'
+    };
+    recurrenceBadge = `<span class="badge badge-recurring">${recurrenceLabels[reminder.recurrence]}</span>`;
+  }
+  
+  // Recurrence end info
+  let recurrenceEndInfo = '';
+  if (reminder.recurrence_end) {
+    const endDate = new Date(reminder.recurrence_end).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    recurrenceEndInfo = `<span class="recurrence-info">Until ${endDate}</span>`;
+  }
+  
   return `
     <div class="reminder-item ${isSent ? 'sent' : ''}">
       <div class="reminder-header">
         <div class="reminder-title">
           ${reminder.title}
           ${statusBadge}
+          ${recurrenceBadge}
         </div>
         <div class="reminder-actions">
           ${!isSent ? `<button class="btn btn-edit" data-id="${reminder.id}">Edit</button>` : ''}
@@ -132,6 +251,7 @@ function createReminderHTML(reminder) {
         <span>📅 ${formattedDate}</span>
         <span>${typeBadge}</span>
         <span title="${reminder.notify_target}">📍 ${truncate(reminder.notify_target, 30)}</span>
+        ${recurrenceEndInfo}
       </div>
     </div>
   `;
@@ -140,13 +260,17 @@ function createReminderHTML(reminder) {
 async function handleCreateReminder(e) {
   e.preventDefault();
   
-  const formData = new FormData(reminderForm);
+  const recurrence = document.querySelector('input[name="recurrence"]:checked').value;
+  const recurrenceEnd = document.getElementById('recurrence_end').value;
+  
   const data = {
-    title: formData.get('title'),
-    message: formData.get('message'),
-    notify_type: formData.get('notify_type'),
-    notify_target: formData.get('notify_target'),
-    remind_at: new Date(formData.get('remind_at')).toISOString()
+    title: document.getElementById('title').value,
+    message: document.getElementById('message').value,
+    notify_type: document.getElementById('notify_type').value,
+    notify_target: document.getElementById('notify_target').value,
+    remind_at: getDateTimeFromPickers(),
+    recurrence: recurrence,
+    recurrence_end: recurrenceEnd ? new Date(recurrenceEnd + 'T23:59:59').toISOString() : null
   };
   
   try {
@@ -161,7 +285,9 @@ async function handleCreateReminder(e) {
     if (response.ok) {
       showToast('Reminder created successfully!', 'success');
       reminderForm.reset();
-      setMinDateTime();
+      setMinDate();
+      recurrenceEndGroup.style.display = 'none';
+      document.querySelector('input[name="recurrence"][value="none"]').checked = true;
       loadReminders();
     } else {
       showToast(result.error || 'Failed to create reminder', 'error');
@@ -201,11 +327,21 @@ async function openEditModal(id) {
     document.getElementById('edit_notify_type').value = reminder.notify_type;
     document.getElementById('edit_notify_target').value = reminder.notify_target;
     
-    // Format date for datetime-local input
-    const remindAt = new Date(reminder.remind_at);
-    const offset = remindAt.getTimezoneOffset();
-    const localISOTime = new Date(remindAt.getTime() - offset * 60000).toISOString().slice(0, 16);
-    document.getElementById('edit_remind_at').value = localISOTime;
+    // Set date and time
+    setDateTimeToPickers(reminder.remind_at, 'edit_');
+    
+    // Set recurrence
+    const recurrence = reminder.recurrence || 'none';
+    document.querySelector(`input[name="edit_recurrence"][value="${recurrence}"]`).checked = true;
+    editRecurrenceEndGroup.style.display = recurrence !== 'none' ? 'block' : 'none';
+    
+    // Set recurrence end
+    if (reminder.recurrence_end) {
+      const endDate = new Date(reminder.recurrence_end).toISOString().split('T')[0];
+      document.getElementById('edit_recurrence_end').value = endDate;
+    } else {
+      document.getElementById('edit_recurrence_end').value = '';
+    }
     
     editModal.classList.add('active');
   } catch (error) {
@@ -221,12 +357,17 @@ async function handleEditReminder(e) {
   e.preventDefault();
   
   const id = document.getElementById('edit_id').value;
+  const recurrence = document.querySelector('input[name="edit_recurrence"]:checked').value;
+  const recurrenceEnd = document.getElementById('edit_recurrence_end').value;
+  
   const data = {
     title: document.getElementById('edit_title').value,
     message: document.getElementById('edit_message').value,
     notify_type: document.getElementById('edit_notify_type').value,
     notify_target: document.getElementById('edit_notify_target').value,
-    remind_at: new Date(document.getElementById('edit_remind_at').value).toISOString()
+    remind_at: getDateTimeFromPickers('edit_'),
+    recurrence: recurrence,
+    recurrence_end: recurrenceEnd ? new Date(recurrenceEnd + 'T23:59:59').toISOString() : null
   };
   
   try {

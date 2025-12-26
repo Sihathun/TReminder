@@ -1,5 +1,5 @@
 // API Base URL
-const API_URL = 'https://treminder.onrender.com/api/reminders';
+const API_URL = 'https://rude-cristin-tonorg-1a1214a5.koyeb.app/api/reminders';
 
 // DOM Elements
 const reminderForm = document.getElementById('reminderForm');

@@ -1,5 +1,5 @@
 // API Base URL
-const API_URL = 'http://localhost:3000/api/reminders';
+const API_URL = 'https://treminder.onrender.com/api/reminders';
 
 // DOM Elements
 const reminderForm = document.getElementById('reminderForm');

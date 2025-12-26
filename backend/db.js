@@ -6,14 +6,15 @@ const sqlite3 = sqlite3Pkg.verbose();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create or open the database file
-const dbPath = path.join(__dirname, "../reminders.db");
+// Use file-based DB locally, or in-memory for cloud platforms without persistent storage
+const isProduction = process.env.NODE_ENV === "production";
+const dbPath = isProduction ? ":memory:" : path.join(__dirname, "../reminders.db");
 
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("Failed to connect to database", err.message);
   } else {
-    console.log("Connected to SQLite database");
+    console.log(`Connected to SQLite database ${isProduction ? "(in-memory)" : "(file)"}`);
   }
 });
 

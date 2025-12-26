@@ -39,9 +39,7 @@
                   <option value="">HH</option>
                 </select>
                 <span class="time-separator">:</span>
-                <select id="remind_minute" name="remind_minute" required>
-                  <option value="">MM</option>
-                </select>
+                <input type="number" id="remind_minute" name="remind_minute" min="0" max="59" placeholder="MM" required>
                 <select id="remind_ampm" name="remind_ampm" required>
                   <option value="AM">AM</option>
                   <option value="PM">PM</option>
@@ -146,9 +144,7 @@
                 <option value="">HH</option>
               </select>
               <span class="time-separator">:</span>
-              <select id="edit_remind_minute" name="remind_minute" required>
-                <option value="">MM</option>
-              </select>
+              <input type="number" id="edit_remind_minute" name="remind_minute" min="0" max="59" placeholder="MM" required>
               <select id="edit_remind_ampm" name="remind_ampm" required>
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>

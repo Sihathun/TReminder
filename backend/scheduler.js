@@ -1,7 +1,6 @@
-// src/scheduler.js
-const db = require("./db");
-const { sendEmail } = require("./services/emailService");
-const { sendDiscordMessage } = require("./services/discordService");
+import db from "./db.js";
+import { sendEmail } from "./services/emailService.js";
+import { sendDiscordMessage } from "./services/discordService.js";
 
 function calculateNextRemindAt(currentRemindAt, recurrence) {
   const date = new Date(currentRemindAt);
@@ -39,7 +38,7 @@ function scheduleNextRecurrence(reminder) {
     const endDate = new Date(reminder.recurrence_end);
     const nextDate = new Date(nextRemindAt);
     if (nextDate > endDate) {
-      console.log(`🔄 Recurrence ended for "${reminder.title}" (past end date)`);
+      console.log(`Recurrence ended for "${reminder.title}" (past end date)`);
       return;
     }
   }
@@ -63,14 +62,14 @@ function scheduleNextRecurrence(reminder) {
         console.error(`Failed to create next recurrence for "${reminder.title}":`, err.message);
       } else {
         const nextDate = new Date(nextRemindAt).toLocaleString();
-        console.log(`🔄 Next ${reminder.recurrence} reminder scheduled for "${reminder.title}" at ${nextDate}`);
+        console.log(`Next ${reminder.recurrence} reminder scheduled for "${reminder.title}" at ${nextDate}`);
       }
     }
   );
 }
 
 function startScheduler() {
-  console.log("⏰ Reminder scheduler started - checking every 10 seconds");
+  console.log("Reminder scheduler started - checking every 10 seconds");
   
   setInterval(async () => {
     const now = new Date().toISOString();
@@ -86,7 +85,7 @@ function startScheduler() {
 
         for (const reminder of rows) {
           try {
-            console.log(`📤 Sending reminder: "${reminder.title}" via ${reminder.notify_type}`);
+            console.log(`Sending reminder: "${reminder.title}" via ${reminder.notify_type}`);
             
             if (reminder.notify_type === "email") {
               await sendEmail(
@@ -107,14 +106,14 @@ function startScheduler() {
               if (err) {
                 console.error(`Failed to update reminder ${reminder.id}:`, err.message);
               } else {
-                console.log(`✅ Reminder "${reminder.title}" sent successfully`);
+                console.log(`Reminder "${reminder.title}" sent successfully`);
                 
                 // Schedule next recurrence if applicable
                 scheduleNextRecurrence(reminder);
               }
             });
           } catch (error) {
-            console.error(`❌ Failed to send reminder "${reminder.title}":`, error.message);
+            console.error(`Failed to send reminder "${reminder.title}":`, error.message);
           }
         }
       }
@@ -122,4 +121,4 @@ function startScheduler() {
   }, 10000); // every 10 seconds
 }
 
-module.exports = { startScheduler };
+export { startScheduler };

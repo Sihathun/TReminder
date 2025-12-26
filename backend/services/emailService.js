@@ -1,4 +1,4 @@
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -18,7 +18,7 @@ async function sendEmail(to, subject, message) {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #6366f1, #a78bfa); padding: 20px; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0;">⏰ Reminder</h1>
+          <h1 style="color: white; margin: 0;">Reminder</h1>
         </div>
         <div style="background: #f8fafc; padding: 20px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px;">
           <h2 style="color: #1e293b; margin-top: 0;">${subject}</h2>
@@ -32,7 +32,7 @@ async function sendEmail(to, subject, message) {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to,
-      subject: `⏰ Reminder: ${subject}`,
+      subject: `Reminder: ${subject}`,
       text: message,
       html: htmlContent
     });
@@ -41,4 +41,4 @@ async function sendEmail(to, subject, message) {
   }
 }
 
-module.exports = { sendEmail };
+export { sendEmail };

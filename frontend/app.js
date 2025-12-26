@@ -1,5 +1,5 @@
 // API Base URL
-const API_URL = '/api/reminders';
+const API_URL = 'http://localhost:3000/api/reminders';
 
 // DOM Elements
 const reminderForm = document.getElementById('reminderForm');
@@ -67,19 +67,6 @@ function initializeTimePickers() {
       select.appendChild(option);
     }
   });
-  
-  // Populate minute selects (00-55 in 5-minute intervals)
-  const minuteSelects = [document.getElementById('remind_minute'), document.getElementById('edit_remind_minute')];
-  minuteSelects.forEach(select => {
-    if (!select) return;
-    select.innerHTML = '<option value="">MM</option>';
-    for (let i = 0; i < 60; i += 5) {
-      const option = document.createElement('option');
-      option.value = i;
-      option.textContent = i.toString().padStart(2, '0');
-      select.appendChild(option);
-    }
-  });
 }
 
 function setMinDate() {
@@ -131,7 +118,7 @@ function setDateTimeToPickers(isoString, prefix = '') {
   
   // Set time
   let hour = date.getHours();
-  const minute = Math.floor(date.getMinutes() / 5) * 5; // Round to nearest 5
+  const minute = date.getMinutes();
   const ampm = hour >= 12 ? 'PM' : 'AM';
   hour = hour > 12 ? hour - 12 : hour;
   if (hour === 0) hour = 12;
@@ -215,9 +202,9 @@ function createReminderHTML(reminder) {
   let recurrenceBadge = '';
   if (reminder.recurrence && reminder.recurrence !== 'none') {
     const recurrenceLabels = {
-      daily: '🔄 Daily',
-      weekly: '🔄 Weekly',
-      monthly: '🔄 Monthly'
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly'
     };
     recurrenceBadge = `<span class="badge badge-recurring">${recurrenceLabels[reminder.recurrence]}</span>`;
   }
@@ -248,9 +235,9 @@ function createReminderHTML(reminder) {
       </div>
       <p class="reminder-message">${escapeHtml(reminder.message)}</p>
       <div class="reminder-meta">
-        <span>📅 ${formattedDate}</span>
+        <span>${formattedDate}</span>
         <span>${typeBadge}</span>
-        <span title="${reminder.notify_target}">📍 ${truncate(reminder.notify_target, 30)}</span>
+        <span title="${reminder.notify_target}">${truncate(reminder.notify_target, 30)}</span>
         ${recurrenceEndInfo}
       </div>
     </div>

@@ -1,10 +1,10 @@
-const axios = require("axios");
+import axios from "axios";
 
 async function sendDiscordMessage(webhookUrl, title, message) {
   try {
     await axios.post(webhookUrl, {
       embeds: [{
-        title: `⏰ Reminder: ${title}`,
+        title: `Reminder: ${title}`,
         description: message,
         color: 0x6366f1,
         timestamp: new Date().toISOString(),
@@ -19,4 +19,4 @@ async function sendDiscordMessage(webhookUrl, title, message) {
   }
 }
 
-module.exports = { sendDiscordMessage };
+export { sendDiscordMessage };
